@@ -185,3 +185,22 @@ Repository variables:
 - Metrics correlation (Prometheus/Grafana)
 - RCA confidence scoring with evidence links
 - Multi-workspace and role-based workflows
+
+## 11) Screenshots
+
+Add your screenshots in a folder like `docs/screenshots/` and update the paths below.
+
+### 1. Incident created in Notion
+![Incident Created](docs/screenshots/Screenshot%20(1302).png.png)
+
+### 2. AI analysis and recommendations updated
+![AI Analysis Updated](docs/screenshots/Screenshot%20(1303).png.png)
+
+### 3. Incident timeline and severity populated
+![Timeline and Severity](docs/screenshots/Screenshot%20(1304).png.png)
+
+### 4. GitHub Actions redeploy workflow run
+![Redeploy Workflow](docs/screenshots/Screenshot%20(1308).png.png)
+
+### 5. Notion resolve workflow update
+![Notion Resolve Workflow](docs/screenshots/Screenshot%20(1309).png.png)
