@@ -80,6 +80,7 @@ def build_handler(notion_client: NotionClient) -> IncidentHandler:
     mapping = HandlerPropertyMapping(
         error_logs=os.getenv("NOTION_PROP_ERROR_LOGS", "Error Logs"),
         severity=os.getenv("NOTION_PROP_SEVERITY", "Severity"),
+        incident_timeline=os.getenv("NOTION_PROP_INCIDENT_TIMELINE", "Incident Timeline"),
         ai_analysis=os.getenv("NOTION_PROP_AI_ANALYSIS", "AI Analysis"),
         recommended_fix=os.getenv("NOTION_PROP_RECOMMENDED_FIX", "Recommended Fix"),
         deployment_trigger=os.getenv("NOTION_PROP_DEPLOYMENT_TRIGGER", "Deployment Trigger"),

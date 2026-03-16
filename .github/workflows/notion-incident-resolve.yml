@@ -15,7 +15,6 @@ jobs:
       NOTION_API_KEY: ${{ secrets.NOTION_API_KEY }}
       NOTION_PROP_STATUS: ${{ vars.NOTION_PROP_STATUS || 'Service Status' }}
       NOTION_PROP_DEPLOYMENT_TRIGGER: ${{ vars.NOTION_PROP_DEPLOYMENT_TRIGGER || 'Deployment Trigger' }}
-      NOTION_PROP_INCIDENT_SUMMARY: ${{ vars.NOTION_PROP_INCIDENT_SUMMARY || 'Incident Summary' }}
       NOTION_STATUS_RESOLVED: ${{ vars.NOTION_STATUS_RESOLVED || 'Resolved' }}
 
     steps:
@@ -35,14 +34,10 @@ jobs:
         id: summary
         shell: bash
         run: |
-          SERVICE="${{ github.event.client_payload.service_name }}"
-          SEVERITY="${{ github.event.client_payload.severity }}"
           MODE="${{ github.event.client_payload.remediation_mode }}"
           if [ "${MODE}" = "k8s-rollout" ]; then
-            echo "summary=Incident for ${SERVICE} (${SEVERITY}) was auto-remediated by Kubernetes rollout via GitHub Actions." >> "$GITHUB_OUTPUT"
             echo "trigger_text=Auto-resolved via Kubernetes redeploy workflow" >> "$GITHUB_OUTPUT"
           else
-            echo "summary=Incident for ${SERVICE} (${SEVERITY}) was resolved in dry-run mode (no live cluster configured)." >> "$GITHUB_OUTPUT"
             echo "trigger_text=Resolved via dry-run remediation workflow" >> "$GITHUB_OUTPUT"
           fi
 
@@ -50,7 +45,6 @@ jobs:
         shell: bash
         run: |
           PAGE_ID="${{ github.event.client_payload.notion_page_id }}"
-          SUMMARY="${{ steps.summary.outputs.summary }}"
           TRIGGER_TEXT="${{ steps.summary.outputs.trigger_text }}"
 
           cat <<EOF > notion-payload.json
@@ -61,16 +55,6 @@ jobs:
               },
               "${NOTION_PROP_DEPLOYMENT_TRIGGER}": {
                 "checkbox": true
-              },
-              "${NOTION_PROP_INCIDENT_SUMMARY}": {
-                "rich_text": [
-                  {
-                    "type": "text",
-                    "text": {
-                      "content": "${SUMMARY}"
-                    }
-                  }
-                ]
               }
             }
           }
