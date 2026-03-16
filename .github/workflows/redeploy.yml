@@ -21,7 +21,7 @@ on:
         type: string
 
 permissions:
-  contents: read
+  contents: write
 
 jobs:
   redeploy:
@@ -53,11 +53,21 @@ jobs:
           kubectl rollout restart deployment/${{ github.event.inputs.service_name }} -n "$KUBE_NAMESPACE"
           kubectl rollout status deployment/${{ github.event.inputs.service_name }} -n "$KUBE_NAMESPACE" --timeout=180s
 
+      - name: Determine remediation mode
+        id: remediation_mode
+        shell: bash
+        run: |
+          if [ -n "${KUBE_CONFIG_DATA}" ]; then
+            echo "mode=k8s-rollout" >> "$GITHUB_OUTPUT"
+          else
+            echo "mode=dry-run" >> "$GITHUB_OUTPUT"
+          fi
+
       - name: Trigger Notion incident resolve workflow
         if: ${{ success() && github.event.inputs.notion_page_id != '' }}
         uses: actions/github-script@v7
         with:
-          github-token: ${{ secrets.GITHUB_TOKEN }}
+          github-token: ${{ github.token }}
           script: |
             await github.rest.repos.createDispatchEvent({
               owner: context.repo.owner,
@@ -67,12 +77,13 @@ jobs:
                 notion_page_id: '${{ github.event.inputs.notion_page_id }}',
                 service_name: '${{ github.event.inputs.service_name }}',
                 severity: '${{ github.event.inputs.severity }}',
-                recommended_fix: '${{ github.event.inputs.recommended_fix }}'
+                recommended_fix: '${{ github.event.inputs.recommended_fix }}',
+                remediation_mode: '${{ steps.remediation_mode.outputs.mode }}'
               }
             });
 
       - name: Dry-run note when kube secret missing
         if: ${{ env.KUBE_CONFIG_DATA == '' }}
         run: |
-          echo "KUBE_CONFIG_DATA secret is not set."
-          echo "Workflow received incident trigger and ran in dry-run mode."
+          echo "KUBE_CONFIG_DATA secret is not set; no live cluster configured."
+          echo "Workflow ran in dry-run mode and still triggered Notion auto-resolution."
