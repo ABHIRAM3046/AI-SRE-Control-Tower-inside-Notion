@@ -191,7 +191,7 @@ Repository variables:
 Add your screenshots in a folder like `docs/screenshots/` and update the paths below.
 
 ### 1. Incident created in Notion
-![Incident Created](docs/screenshots/Screenshot(1302).png)
+![Incident Created](docs/screenshots/Screenshot%20(1302).png)
 
 ### 2. AI analysis and recommendations updated
 ![AI Analysis Updated](docs/screenshots/Screenshot%20(1303).png)
