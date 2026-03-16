@@ -1,0 +1,55 @@
+name: Redeploy Service
+
+on:
+  workflow_dispatch:
+    inputs:
+      service_name:
+        description: Service/deployment name to restart
+        required: true
+        type: string
+      recommended_fix:
+        description: AI recommended remediation (for audit)
+        required: false
+        type: string
+      severity:
+        description: Incident severity
+        required: true
+        type: string
+
+permissions:
+  contents: read
+
+jobs:
+  redeploy:
+    runs-on: ubuntu-latest
+    env:
+      KUBE_NAMESPACE: ${{ vars.KUBE_NAMESPACE || 'default' }}
+
+    steps:
+      - name: Log incident context
+        run: |
+          echo "Service: ${{ github.event.inputs.service_name }}"
+          echo "Severity: ${{ github.event.inputs.severity }}"
+          echo "Recommended Fix: ${{ github.event.inputs.recommended_fix }}"
+
+      - name: Setup kubectl
+        uses: azure/setup-kubectl@v4
+
+      - name: Configure kubeconfig from secret
+        if: ${{ secrets.KUBE_CONFIG_DATA != '' }}
+        shell: bash
+        run: |
+          mkdir -p "$HOME/.kube"
+          echo "${{ secrets.KUBE_CONFIG_DATA }}" | base64 -d > "$HOME/.kube/config"
+
+      - name: Rollout restart deployment
+        if: ${{ secrets.KUBE_CONFIG_DATA != '' }}
+        run: |
+          kubectl rollout restart deployment/${{ github.event.inputs.service_name }} -n "$KUBE_NAMESPACE"
+          kubectl rollout status deployment/${{ github.event.inputs.service_name }} -n "$KUBE_NAMESPACE" --timeout=180s
+
+      - name: Dry-run note when kube secret missing
+        if: ${{ secrets.KUBE_CONFIG_DATA == '' }}
+        run: |
+          echo "KUBE_CONFIG_DATA secret is not set."
+          echo "Workflow received incident trigger and ran in dry-run mode."
