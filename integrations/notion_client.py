@@ -22,12 +22,20 @@ class NotionClient:
             "Content-Type": "application/json",
         }
 
-    def query_incidents(self, target_status: Optional[str], status_property_name: str) -> List[Dict[str, Any]]:
+    def query_incidents(
+        self,
+        target_status: Optional[str],
+        status_property_name: str,
+        status_property_type: str = "status",
+    ) -> List[Dict[str, Any]]:
         payload: Dict[str, Any] = {"page_size": 50}
         if target_status:
+            normalized_type = status_property_type.strip().lower()
+            if normalized_type not in {"status", "select"}:
+                normalized_type = "status"
             payload["filter"] = {
                 "property": status_property_name,
-                "status": {"equals": target_status},
+                normalized_type: {"equals": target_status},
             }
 
         response = requests.post(
@@ -81,6 +89,10 @@ def status_property(value: str) -> Dict[str, Any]:
 
 def select_property(value: str) -> Dict[str, Any]:
     return {"select": {"name": value}}
+
+
+def checkbox_property(value: bool) -> Dict[str, Any]:
+    return {"checkbox": value}
 
 
 def extract_title(properties: Dict[str, Any], property_name: str) -> str:

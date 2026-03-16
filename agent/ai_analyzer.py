@@ -38,15 +38,18 @@ class AIAnalyzer:
         if self.client is None:
             return self._heuristic_analysis(service_name=service_name, severity=severity, error_logs=error_logs)
 
-        prompt = self._build_prompt(service_name=service_name, severity=severity, error_logs=error_logs)
-        response = self.client.responses.create(
-            model=self.model,
-            input=prompt,
-            temperature=0.1,
-        )
+        try:
+            prompt = self._build_prompt(service_name=service_name, severity=severity, error_logs=error_logs)
+            response = self.client.responses.create(
+                model=self.model,
+                input=prompt,
+                temperature=0.1,
+            )
 
-        text_output = response.output_text.strip()
-        return self._parse_output(service_name=service_name, raw_output=text_output)
+            text_output = response.output_text.strip()
+            return self._parse_output(service_name=service_name, raw_output=text_output)
+        except Exception:
+            return self._heuristic_analysis(service_name=service_name, severity=severity, error_logs=error_logs)
 
     def _build_prompt(self, service_name: str, severity: str, error_logs: str) -> str:
         return (

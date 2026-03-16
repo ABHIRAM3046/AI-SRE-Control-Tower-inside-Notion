@@ -78,11 +78,15 @@ def build_handler(notion_client: NotionClient) -> IncidentHandler:
     auto_fix_executor = build_automation()
 
     mapping = HandlerPropertyMapping(
+        error_logs=os.getenv("NOTION_PROP_ERROR_LOGS", "Error Logs"),
+        severity=os.getenv("NOTION_PROP_SEVERITY", "Severity"),
         ai_analysis=os.getenv("NOTION_PROP_AI_ANALYSIS", "AI Analysis"),
         recommended_fix=os.getenv("NOTION_PROP_RECOMMENDED_FIX", "Recommended Fix"),
         deployment_trigger=os.getenv("NOTION_PROP_DEPLOYMENT_TRIGGER", "Deployment Trigger"),
         incident_summary=os.getenv("NOTION_PROP_INCIDENT_SUMMARY", "Incident Summary"),
         status=os.getenv("NOTION_PROP_STATUS", "Status"),
+        status_type=os.getenv("NOTION_PROP_STATUS_TYPE", "select"),
+        deployment_trigger_type=os.getenv("NOTION_PROP_DEPLOYMENT_TRIGGER_TYPE", "checkbox"),
     )
 
     return IncidentHandler(
@@ -105,9 +109,11 @@ def process_once() -> List[dict]:
 
     target_status = os.getenv("NOTION_TARGET_STATUS", "Open").strip()
     status_property_name = os.getenv("NOTION_PROP_STATUS", "Status").strip()
+    status_property_type = os.getenv("NOTION_PROP_STATUS_TYPE", "select").strip()
     pages = notion_client.query_incidents(
         target_status=target_status if target_status else None,
         status_property_name=status_property_name,
+        status_property_type=status_property_type,
     )
 
     results: List[dict] = []

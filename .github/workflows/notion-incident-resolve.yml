@@ -57,17 +57,10 @@ jobs:
           {
             "properties": {
               "${NOTION_PROP_STATUS}": {
-                "status": {"name": "${NOTION_STATUS_RESOLVED}"}
+                "select": {"name": "${NOTION_STATUS_RESOLVED}"}
               },
               "${NOTION_PROP_DEPLOYMENT_TRIGGER}": {
-                "rich_text": [
-                  {
-                    "type": "text",
-                    "text": {
-                      "content": "${TRIGGER_TEXT}"
-                    }
-                  }
-                ]
+                "checkbox": true
               },
               "${NOTION_PROP_INCIDENT_SUMMARY}": {
                 "rich_text": [
