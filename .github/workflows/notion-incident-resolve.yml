@@ -13,7 +13,7 @@ jobs:
     env:
       NOTION_DATABASE_ID: ${{ secrets.NOTION_DATABASE_ID }}
       NOTION_API_KEY: ${{ secrets.NOTION_API_KEY }}
-      NOTION_PROP_STATUS: ${{ vars.NOTION_PROP_STATUS || 'Status' }}
+      NOTION_PROP_STATUS: ${{ vars.NOTION_PROP_STATUS || 'Service Status' }}
       NOTION_PROP_DEPLOYMENT_TRIGGER: ${{ vars.NOTION_PROP_DEPLOYMENT_TRIGGER || 'Deployment Trigger' }}
       NOTION_PROP_INCIDENT_SUMMARY: ${{ vars.NOTION_PROP_INCIDENT_SUMMARY || 'Incident Summary' }}
       NOTION_STATUS_RESOLVED: ${{ vars.NOTION_STATUS_RESOLVED || 'Resolved' }}
