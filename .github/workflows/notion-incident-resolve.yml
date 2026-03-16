@@ -1,0 +1,82 @@
+name: Notion Incident Resolve
+
+on:
+  repository_dispatch:
+    types: [incident_resolve]
+
+permissions:
+  contents: read
+
+jobs:
+  update-notion:
+    runs-on: ubuntu-latest
+    env:
+      NOTION_DATABASE_ID: ${{ secrets.NOTION_DATABASE_ID }}
+      NOTION_API_KEY: ${{ secrets.NOTION_API_KEY }}
+      NOTION_PROP_STATUS: ${{ vars.NOTION_PROP_STATUS || 'Status' }}
+      NOTION_PROP_DEPLOYMENT_TRIGGER: ${{ vars.NOTION_PROP_DEPLOYMENT_TRIGGER || 'Deployment Trigger' }}
+      NOTION_PROP_INCIDENT_SUMMARY: ${{ vars.NOTION_PROP_INCIDENT_SUMMARY || 'Incident Summary' }}
+      NOTION_STATUS_RESOLVED: ${{ vars.NOTION_STATUS_RESOLVED || 'Resolved' }}
+
+    steps:
+      - name: Validate payload and secrets
+        shell: bash
+        run: |
+          if [ -z "${NOTION_API_KEY}" ]; then
+            echo "Missing NOTION_API_KEY secret"
+            exit 1
+          fi
+          if [ -z "${{ github.event.client_payload.notion_page_id }}" ]; then
+            echo "Missing notion_page_id in dispatch payload"
+            exit 1
+          fi
+
+      - name: Build incident summary
+        id: summary
+        shell: bash
+        run: |
+          SERVICE="${{ github.event.client_payload.service_name }}"
+          SEVERITY="${{ github.event.client_payload.severity }}"
+          echo "summary=Incident for ${SERVICE} (${SEVERITY}) was auto-remediated by GitHub Actions rollout." >> "$GITHUB_OUTPUT"
+
+      - name: Update Notion page to resolved
+        shell: bash
+        run: |
+          PAGE_ID="${{ github.event.client_payload.notion_page_id }}"
+          SUMMARY="${{ steps.summary.outputs.summary }}"
+
+          cat <<EOF > notion-payload.json
+          {
+            "properties": {
+              "${NOTION_PROP_STATUS}": {
+                "status": {"name": "${NOTION_STATUS_RESOLVED}"}
+              },
+              "${NOTION_PROP_DEPLOYMENT_TRIGGER}": {
+                "rich_text": [
+                  {
+                    "type": "text",
+                    "text": {
+                      "content": "Auto-resolved via redeploy workflow"
+                    }
+                  }
+                ]
+              },
+              "${NOTION_PROP_INCIDENT_SUMMARY}": {
+                "rich_text": [
+                  {
+                    "type": "text",
+                    "text": {
+                      "content": "${SUMMARY}"
+                    }
+                  }
+                ]
+              }
+            }
+          }
+          EOF
+
+          curl -sS -X PATCH "https://api.notion.com/v1/pages/${PAGE_ID}" \
+            -H "Authorization: Bearer ${NOTION_API_KEY}" \
+            -H "Notion-Version: 2022-06-28" \
+            -H "Content-Type: application/json" \
+            --data @notion-payload.json

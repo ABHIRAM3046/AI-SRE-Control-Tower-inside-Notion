@@ -24,7 +24,13 @@ class AutoFixExecutor:
         self.github_client = github_client
         self.kubernetes_client = kubernetes_client
 
-    def maybe_execute(self, service_name: str, recommended_fix: str, severity: str) -> str:
+    def maybe_execute(
+        self,
+        service_name: str,
+        recommended_fix: str,
+        severity: str,
+        incident_page_id: str,
+    ) -> str:
         if not self.config.enabled:
             return "Automation disabled."
 
@@ -41,6 +47,7 @@ class AutoFixExecutor:
                     "service_name": service_name,
                     "recommended_fix": recommended_fix[:200],
                     "severity": severity,
+                    "notion_page_id": incident_page_id,
                 }
             )
 

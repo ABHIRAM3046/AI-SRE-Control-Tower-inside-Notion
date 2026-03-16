@@ -15,6 +15,10 @@ on:
         description: Incident severity
         required: true
         type: string
+      notion_page_id:
+        description: Notion page ID for the incident row
+        required: false
+        type: string
 
 permissions:
   contents: read
@@ -24,6 +28,7 @@ jobs:
     runs-on: ubuntu-latest
     env:
       KUBE_NAMESPACE: ${{ vars.KUBE_NAMESPACE || 'default' }}
+      KUBE_CONFIG_DATA: ${{ secrets.KUBE_CONFIG_DATA }}
 
     steps:
       - name: Log incident context
@@ -36,20 +41,38 @@ jobs:
         uses: azure/setup-kubectl@v4
 
       - name: Configure kubeconfig from secret
-        if: ${{ secrets.KUBE_CONFIG_DATA != '' }}
+        if: ${{ env.KUBE_CONFIG_DATA != '' }}
         shell: bash
         run: |
           mkdir -p "$HOME/.kube"
-          echo "${{ secrets.KUBE_CONFIG_DATA }}" | base64 -d > "$HOME/.kube/config"
+          echo "${KUBE_CONFIG_DATA}" | base64 -d > "$HOME/.kube/config"
 
       - name: Rollout restart deployment
-        if: ${{ secrets.KUBE_CONFIG_DATA != '' }}
+        if: ${{ env.KUBE_CONFIG_DATA != '' }}
         run: |
           kubectl rollout restart deployment/${{ github.event.inputs.service_name }} -n "$KUBE_NAMESPACE"
           kubectl rollout status deployment/${{ github.event.inputs.service_name }} -n "$KUBE_NAMESPACE" --timeout=180s
 
+      - name: Trigger Notion incident resolve workflow
+        if: ${{ success() && github.event.inputs.notion_page_id != '' }}
+        uses: actions/github-script@v7
+        with:
+          github-token: ${{ secrets.GITHUB_TOKEN }}
+          script: |
+            await github.rest.repos.createDispatchEvent({
+              owner: context.repo.owner,
+              repo: context.repo.repo,
+              event_type: 'incident_resolve',
+              client_payload: {
+                notion_page_id: '${{ github.event.inputs.notion_page_id }}',
+                service_name: '${{ github.event.inputs.service_name }}',
+                severity: '${{ github.event.inputs.severity }}',
+                recommended_fix: '${{ github.event.inputs.recommended_fix }}'
+              }
+            });
+
       - name: Dry-run note when kube secret missing
-        if: ${{ secrets.KUBE_CONFIG_DATA == '' }}
+        if: ${{ env.KUBE_CONFIG_DATA == '' }}
         run: |
           echo "KUBE_CONFIG_DATA secret is not set."
           echo "Workflow received incident trigger and ran in dry-run mode."

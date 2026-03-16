@@ -42,6 +42,7 @@ class IncidentHandler:
             service_name=incident.service_name,
             recommended_fix=analysis.recommended_fix,
             severity=incident.severity,
+            incident_page_id=incident.page_id,
         )
 
         update_payload = {
